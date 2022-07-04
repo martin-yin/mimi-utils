@@ -1,3 +1,3 @@
-export { SimpleUpload } from './simpleUpload';
+export { SimpleUpload } from './simple-upload';
 
 export type { SimpleUploadOptionsType, UploadRequestOption } from './interface';
