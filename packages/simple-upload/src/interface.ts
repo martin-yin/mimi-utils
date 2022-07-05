@@ -45,11 +45,32 @@ export interface UploadRequestOption {
   action: string;
   filename: string;
   data?: Record<string, unknown>;
-  file: SimpleFile;
+  file: SimpleFile | File | Blob;
   headers?: AxiosRequestHeaders;
   method: UploadRequestMethod;
-  onProgress: (progressEvent: UploadProgressEvent, file: SimpleFile) => void;
-  onSuccess: (ret: any) => void;
-  onError: (err: UploadRequestError) => void;
+  onProgress?: (progressEvent: UploadProgressEvent, file: SimpleFile) => void;
+  onSuccess?: (ret: any) => void;
+  onError?: (err: UploadRequestError) => void;
   cancel?: Canceler;
 }
+
+export type SimpleSectionUploadType = {
+  //上传切片的地址
+  chunkAction: string;
+  // 合并文件地址
+  mergeChunkAction: string;
+  // 每个切片的大小
+  chunkSize: number;
+  // 已经上传过的文件切片
+  uploadFileChunkList?: Array<string>;
+  onProgress?: (progress: string) => void;
+  // 当切片上传完成时触发
+  onUploadChunkSuccess?: () => void;
+  // 当所有切片上传完成时触发
+  onUploadDone?: (res: any) => void;
+};
+
+export type ChunkType = {
+  file: Blob;
+  filename: string;
+};

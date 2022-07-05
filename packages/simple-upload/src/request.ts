@@ -45,6 +45,8 @@ export default function upload(option: UploadRequestOption) {
     formData.append(option.filename, option.file);
   }
 
+  const { onProgress, onSuccess, onError } = option;
+
   axios
     .request({
       url: option.action,
@@ -59,13 +61,13 @@ export default function upload(option: UploadRequestOption) {
           e.percent = (e.loaded / e.total) * 100;
         }
 
-        option.onProgress(e, option.file);
+        onProgress?.(e, option.file as any);
       }
     })
     .then(res => {
-      option.onSuccess(getBody(res));
+      onSuccess?.(getBody(res));
     })
     .catch(err => {
-      option.onError(err);
+      onError?.(err);
     });
 }

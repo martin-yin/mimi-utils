@@ -1,20 +1,16 @@
+import axios from 'axios';
 import SparkMD5 from 'spark-md5';
-
-export type SimpleSectionUploadType = {
-  // 每个切片的大小
-  chunkSize: number;
-  onProgress?: (progress: string) => void;
-};
+import type { ChunkType, SimpleSectionUploadType } from './interface';
+import upload from './request';
 
 export class SimpleSectionUpload {
   options: SimpleSectionUploadType;
   private spark = new SparkMD5.ArrayBuffer();
   private fileReader = new FileReader();
-  private fileChunkList: Array<{ file: Blob; filename: string }> = [];
-  private uploadedFileChunkList: Array<string> = [];
-
+  private fileChunkList: Array<ChunkType> = [];
+  private hash = '';
   private complete = 0;
-  private sectionCount = 0;
+  private chunkCount = 0;
   constructor(options: SimpleSectionUploadType) {
     this.options = options;
   }
@@ -26,15 +22,19 @@ export class SimpleSectionUpload {
   public async upload(file: File) {
     // 等待切片完成
     await this.fileSection(file);
-    const { uploadedFileChunkList } = this;
-
     this.fileChunkList.forEach(chunk => {
-      // 如果已经上传过就不再上传了
-      if (uploadedFileChunkList.length > 0 && uploadedFileChunkList.includes(chunk.filename)) {
-        this.uploadComplete();
+      if (this.options.uploadFileChunkList) {
+        const { uploadFileChunkList } = this.options;
 
-        return;
+        // 如果已经上传过就不再上传了
+        if (uploadFileChunkList.length > 0 && uploadFileChunkList.includes(chunk.filename)) {
+          this.uploadComplete();
+
+          return;
+        }
       }
+
+      this.uploadChunk(chunk);
       // 上传切片
     });
   }
@@ -42,10 +42,10 @@ export class SimpleSectionUpload {
   /**
    * 更新进度条
    */
-  private updateUploadedProgerss() {
-    const { complete, sectionCount } = this;
+  private uploadedProgerss() {
+    const { complete, chunkCount } = this;
     const { onProgress } = this.options;
-    const uploadedProgerss = ((complete / sectionCount) * 100).toFixed(2);
+    const uploadedProgerss = ((complete / chunkCount) * 100).toFixed(2);
 
     onProgress?.(uploadedProgerss);
   }
@@ -56,14 +56,36 @@ export class SimpleSectionUpload {
    */
   private uploadComplete() {
     this.complete++;
-    this.updateUploadedProgerss();
-    const { complete, sectionCount } = this;
+    this.uploadedProgerss();
+    const { hash, complete, chunkCount } = this;
 
     // 如果 complete 小于 切片数量，说明还未上传完。
-    if (complete < sectionCount) {
+    if (complete < chunkCount) {
       return;
     }
+
     // 合并切片接口
+    axios
+      .request({
+        url: this.options.mergeChunkAction,
+        data: { hash, chunkCount },
+        method: 'POST'
+      })
+      .then(res => {
+        this.options.onUploadDone?.(res);
+      });
+  }
+
+  private async uploadChunk({ file, filename }: ChunkType) {
+    upload({
+      action: this.options.chunkAction,
+      file: file,
+      filename,
+      method: 'POST',
+      onSuccess: () => {
+        this.uploadComplete();
+      }
+    });
   }
 
   /**
@@ -100,16 +122,21 @@ export class SimpleSectionUpload {
   private async fileSection(file: File) {
     const { hash, suffix } = await this.retriveHash(file);
     const { chunkSize } = this.options;
+
+    this.hash = hash;
     let index = 0;
 
-    this.sectionCount = this.computeSectionCount(file.size);
+    this.chunkCount = this.computeSectionCount(file.size);
 
     return new Promise(resolve => {
       try {
-        while (index < this.sectionCount) {
+        while (index < this.chunkCount) {
+          const filename = `${hash}_${index + 1}.${suffix}`;
+          const fileChunk = file.slice(index * chunkSize, (index + 1) * chunkSize);
+
           this.fileChunkList.push({
-            file: file.slice(index * chunkSize, (index + 1) * chunkSize),
-            filename: `${hash}_${index + 1}.${suffix}`
+            file: fileChunk,
+            filename: filename
           });
           index++;
         }
