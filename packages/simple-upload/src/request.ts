@@ -1,6 +1,6 @@
 import type { AxiosResponse } from 'axios';
 import axios from 'axios';
-import type { UploadProgressEvent, UploadRequestOption } from './interface';
+import type { OtherDataType, RquestType, UploadProgressEvent, UploadRequestOption } from './interface';
 
 function getBody(res: AxiosResponse<any, any>) {
   const data = res.data;
@@ -14,6 +14,30 @@ function getBody(res: AxiosResponse<any, any>) {
   } catch (e) {
     return data;
   }
+}
+
+export function request(option: RquestType, otherData?: OtherDataType) {
+  const { url, data, headers, method, onProgress, onSuccess, onError } = option;
+
+  axios
+    .request({
+      url,
+      data,
+      headers,
+      method,
+      cancelToken: new axios.CancelToken(c => {
+        option.cancel = c;
+      }),
+      onUploadProgress: (e: UploadProgressEvent) => {
+        onProgress?.(e, otherData);
+      }
+    })
+    .then(res => {
+      onSuccess?.(getBody(res));
+    })
+    .catch(err => {
+      onError?.(err);
+    });
 }
 
 export default function upload(option: UploadRequestOption) {
@@ -45,29 +69,18 @@ export default function upload(option: UploadRequestOption) {
     formData.append(option.filename, option.file);
   }
 
-  const { onProgress, onSuccess, onError } = option;
+  const { url, headers, method, onProgress, onSuccess, onError } = option;
 
-  axios
-    .request({
-      url: option.action,
+  request(
+    {
+      url,
       data: formData,
-      headers: option.headers,
-      method: option.method,
-      cancelToken: new axios.CancelToken(c => {
-        option.cancel = c;
-      }),
-      onUploadProgress: (e: UploadProgressEvent) => {
-        if (e.total && e.loaded) {
-          e.percent = (e.loaded / e.total) * 100;
-        }
-
-        onProgress?.(e, option.file as any);
-      }
-    })
-    .then(res => {
-      onSuccess?.(getBody(res));
-    })
-    .catch(err => {
-      onError?.(err);
-    });
+      headers,
+      method,
+      onProgress,
+      onSuccess,
+      onError
+    },
+    option.file
+  );
 }

@@ -24,41 +24,31 @@ export type ProcessFileType = {
 
 export type BeforeUploadFileType = File | Blob | boolean | string;
 
-export type SimpleUploadOptionsType = {
-  action: string;
-  name?: 'File';
-  method: UploadRequestMethod;
-  beforeUpload?: (
-    files: SimpleFile,
-    fileList: SimpleFile[]
-  ) => BeforeUploadFileType | Promise<void | BeforeUploadFileType>;
-  headers?: AxiosRequestHeaders;
-  onProgress?: (progressEvent: UploadProgressEvent, file: File) => void;
-  onSuccess: (res: AxiosResponse<any, any>) => void;
-  onError?: (error: any) => void;
-  data?: (file: File) => Promise<Record<string, unknown>> | Record<string, unknown> | Promise<Record<string, unknown>>;
-  //Todo：目前未想好怎么设计
-  done?: (file: File[] | File) => void;
-};
+export type OtherDataType = Record<string, unknown> | SimpleFile | File | Blob;
 
-export interface UploadRequestOption {
-  action: string;
-  filename: string;
-  data?: Record<string, unknown>;
-  file: SimpleFile | File | Blob;
-  headers?: AxiosRequestHeaders;
+export type RquestType = {
+  url: string;
   method: UploadRequestMethod;
-  onProgress?: (progressEvent: UploadProgressEvent, file: SimpleFile) => void;
+  headers?: AxiosRequestHeaders;
+  data?: Record<string, unknown> | FormData;
+  onProgress?: (progressEvent: UploadProgressEvent, otherData?: OtherDataType) => void;
   onSuccess?: (ret: any) => void;
   onError?: (err: UploadRequestError) => void;
   cancel?: Canceler;
+};
+
+export interface UploadRequestOption extends RquestType {
+  url: string;
+  filename: string;
+  data?: Record<string, unknown>;
+  file: SimpleFile | File | Blob;
 }
 
 export type SimpleSectionUploadType = {
   //上传切片的地址
-  chunkAction: string;
+  chunkUrl: string;
   // 合并文件地址
-  mergeChunkAction: string;
+  mergeChunkUrl: string;
   // 每个切片的大小
   chunkSize: number;
   // 已经上传过的文件切片
@@ -74,3 +64,14 @@ export type ChunkType = {
   file: Blob;
   filename: string;
 };
+
+export type DataType = Promise<Record<string, unknown>> | Record<string, unknown>;
+
+export interface SimpleUploadOptionsType extends Omit<UploadRequestOption, 'data'> {
+  name?: 'File';
+  beforeUpload?: (
+    files: SimpleFile,
+    fileList: SimpleFile[]
+  ) => BeforeUploadFileType | Promise<void | BeforeUploadFileType>;
+  data?: (file: File) => Promise<Record<string, unknown>> | Record<string, unknown>;
+}

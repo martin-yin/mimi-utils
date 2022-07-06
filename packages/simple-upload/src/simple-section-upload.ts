@@ -67,7 +67,7 @@ export class SimpleSectionUpload {
     // 合并切片接口
     axios
       .request({
-        url: this.options.mergeChunkAction,
+        url: this.options.mergeChunkUrl,
         data: { hash, chunkCount },
         method: 'POST'
       })
@@ -78,7 +78,7 @@ export class SimpleSectionUpload {
 
   private async uploadChunk({ file, filename }: ChunkType) {
     upload({
-      action: this.options.chunkAction,
+      url: this.options.chunkUrl,
       file: file,
       filename,
       method: 'POST',

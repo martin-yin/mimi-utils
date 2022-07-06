@@ -1,10 +1,10 @@
 import type {
-  SimpleUploadOptionsType,
   SimpleFile,
   UploadRequestError,
   UploadRequestOption,
   ProcessFileType,
-  UploadProgressEvent
+  UploadProgressEvent,
+  SimpleUploadOptionsType
 } from './interface';
 import request from './request';
 import getUid from './utils';
@@ -92,10 +92,10 @@ export class SimpleUpload {
   post({ data, origin, parsedFile }: ProcessFileType) {
     const { uid } = origin;
 
-    const { headers, method, name = 'File', action } = this.options;
+    const { headers, method, name = 'File', url } = this.options;
 
     const requestOption: UploadRequestOption = {
-      action,
+      url,
       filename: name,
       data,
       file: parsedFile,
