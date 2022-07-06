@@ -1,4 +1,4 @@
-import type { AxiosRequestHeaders, AxiosResponse, Canceler } from 'axios';
+import type { AxiosRequestHeaders, Canceler } from 'axios';
 
 export interface UploadProgressEvent extends Partial<ProgressEvent> {
   percent?: number;
@@ -30,7 +30,7 @@ export type RquestType = {
   url: string;
   method: UploadRequestMethod;
   headers?: AxiosRequestHeaders;
-  data?: Record<string, unknown> | FormData;
+  data?: Record<string, unknown> | FormData | File;
   onProgress?: (progressEvent: UploadProgressEvent, otherData?: OtherDataType) => void;
   onSuccess?: (ret: any) => void;
   onError?: (err: UploadRequestError) => void;
@@ -64,8 +64,6 @@ export type ChunkType = {
   file: Blob;
   filename: string;
 };
-
-export type DataType = Promise<Record<string, unknown>> | Record<string, unknown>;
 
 export interface SimpleUploadOptionsType extends Omit<UploadRequestOption, 'data'> {
   name?: 'File';

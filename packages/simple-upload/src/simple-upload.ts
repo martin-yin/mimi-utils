@@ -146,5 +146,3 @@ export class SimpleUpload {
     }
   }
 }
-
-new SimpleUpload({} as any);

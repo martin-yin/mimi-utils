@@ -1,7 +1,7 @@
 import axios from 'axios';
 import SparkMD5 from 'spark-md5';
 import type { ChunkType, SimpleSectionUploadType } from './interface';
-import upload from './request';
+import { request } from './request';
 
 export class SimpleSectionUpload {
   options: SimpleSectionUploadType;
@@ -34,8 +34,8 @@ export class SimpleSectionUpload {
         }
       }
 
-      this.uploadChunk(chunk);
       // 上传切片
+      this.uploadChunk(chunk);
     });
   }
 
@@ -76,14 +76,23 @@ export class SimpleSectionUpload {
       });
   }
 
+  /**
+   * 上传切片
+   * @param param0
+   */
   private async uploadChunk({ file, filename }: ChunkType) {
-    upload({
+    const data = new File([file], filename, { type: file.type });
+
+    request({
       url: this.options.chunkUrl,
-      file: file,
-      filename,
       method: 'POST',
+      data,
       onSuccess: () => {
+        // 切片上传成功之后会去调用一起 uploadComplete，用于判断切片是否上传完成。
         this.uploadComplete();
+      },
+      onError: err => {
+        console.log(err);
       }
     });
   }
